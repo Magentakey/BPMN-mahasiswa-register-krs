@@ -4,172 +4,146 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulasi BPMN Daftar Ulang Mahasiswa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
 <style>
-:root{--bg:#f6f7f4;--panel:#fff;--ink:#1d2a2e;--mute:#5d6b70;--line:#8a979b;--bd:#d5dbd9;
---l0:#e3eefb;--l1:#ece6f7;--l2:#fbf0d9;--l3:#e1f3e6;--act:#ffb020;--done:#2f7d6d;--red:#d12c2c}
-@media(prefers-color-scheme:dark){:root{--bg:#141a1c;--panel:#1d2528;--ink:#e6ecea;--mute:#9aa8ab;--line:#7b898d;--bd:#33403f;
---l0:#1d2c3d;--l1:#2a2539;--l2:#3a3220;--l3:#1f3427;--done:#5cc4af;--red:#ff6b6b}}
+:root{--bg:#f6f7f4;--frame:#aeb5b2;--panel:#fff;--ink:#1d2a2e;--mute:#5d6b70;--line:#6f7d81;--bd:#cfd6d4;
+--l0:#e3eefb;--l1:#ece6f7;--l2:#e1f3e6;--l3:#fbf0d9;--act:#ffb020;--done:#2f7d6d;--red:#d12c2c}
+@media(prefers-color-scheme:dark){:root{--bg:#141a1c;--frame:#0c1012;--panel:#1d2528;--ink:#e6ecea;--mute:#9aa8ab;--line:#8fa0a4;--bd:#33403f;
+--l0:#1a2a3b;--l1:#272237;--l2:#1c3125;--l3:#372f1e;--done:#5cc4af;--red:#ff6b6b}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
-header{padding:16px 20px 8px}
-h1{margin:0;font:700 20px/1.2 Georgia,"Times New Roman",serif}
-header p{margin:4px 0 0;color:var(--mute);font-size:13px}
-.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 20px}
-button{font:inherit;padding:7px 16px;border:1px solid var(--bd);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
-button:hover{border-color:var(--done)}button:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+html,body{height:100%;margin:0;overflow:hidden}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:13px/1.45 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:8px 14px}
+h1{margin:0;font:700 17px/1.2 Georgia,"Times New Roman",serif}
+.own{color:var(--mute);font-size:12px}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+button,select{font:inherit;padding:5px 12px;border:1px solid var(--bd);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--done)}button:focus-visible,select:focus-visible{outline:2px solid var(--act);outline-offset:2px}
 #bPlay{background:var(--done);color:#fff;border-color:var(--done)}
-#st{color:var(--mute);margin-left:8px}
-.wrap{margin:0 20px;border:1px solid var(--bd);border-radius:8px;background:var(--panel);overflow-x:auto}
-svg{display:block;font-family:inherit}
-.band{stroke:var(--bd)}.l0{fill:var(--l0)}.l1{fill:var(--l1)}.l2{fill:var(--l2)}.l3{fill:var(--l3)}
-.lane{font-size:12px;font-weight:700;fill:var(--ink)}
-.n{stroke:var(--line);stroke-width:1.5;transition:fill .3s}
-.n.vis{stroke:var(--done);stroke-width:2.5}
-.n.act{fill:var(--act);stroke:#b36b00;stroke-width:3;filter:drop-shadow(0 0 7px var(--act))}
-.t{font-size:11px;fill:var(--ink);text-anchor:middle;pointer-events:none}
-.act+.t,.act~.t{}
-g.a .t{fill:#1d1d1d;font-weight:700}
-.e{fill:none;stroke:var(--line);stroke-width:1.6}
-.e.done{stroke:var(--done);stroke-width:2.4}
-.e.on{stroke:var(--act);stroke-width:3.4;stroke-dasharray:8 6;animation:d .5s linear infinite}
-@keyframes d{to{stroke-dashoffset:-14}}
-.el{font-size:10.5px;fill:var(--mute);paint-order:stroke;stroke:var(--panel);stroke-width:4px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:12px 20px 24px}
-.card{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:12px 14px}
-.card h2{margin:0 0 8px;font-size:14px}
-#prompt .q{font-weight:600;margin-bottom:8px}#prompt button{margin:0 6px 6px 0}
-#log{margin:0;padding-left:18px;max-height:170px;overflow:auto;font-size:13px;color:var(--mute)}
+label.f{display:flex;gap:4px;align-items:center;color:var(--mute)}
+#st{color:var(--mute);min-width:110px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 310px;grid-template-rows:minmax(0,42%) minmax(0,1fr);gap:10px;padding:10px;background:var(--frame)}
+#dg{grid-row:1/3;position:relative;min-height:0;background:var(--panel);border-radius:6px;overflow:hidden}
+#cy{position:absolute;inset:0}
+.card{background:var(--panel);border-radius:6px;padding:10px 12px;overflow:auto;min-height:0}
+.card h2{margin:0 0 6px;font-size:13px}
+.q{font-weight:600;margin-bottom:6px}.card button{margin:0 6px 6px 0}
+#log{margin:6px 0 0;padding-left:18px;color:var(--mute);font-size:12px}
 #log li:last-child{color:var(--ink);font-weight:600}
-.hit{color:var(--ink);font-weight:700}.mer{color:var(--red);font-weight:700}
-@media(prefers-reduced-motion:reduce){.e.on{animation:none}}
+.hit{font-weight:700}.mer{color:var(--red);font-weight:700}
+@media(max-width:820px){main{grid-template-columns:1fr;grid-template-rows:55% minmax(0,22%) minmax(0,1fr)}#dg{grid-row:auto}.ctl{margin-left:0}}
 </style>
 </head>
 <body>
 <header>
-<h1>Simulasi Alur Daftar Ulang Mahasiswa (BPMN Swimlane)</h1>
-<p>Ramdhany Sunarto, NIM 1152800005. Tekan Play, lalu pilih jawaban pada setiap titik keputusan.</p>
-</header>
-<div class="bar">
+<div><h1>Simulasi Daftar Ulang Mahasiswa (BPMN Swimlane)</h1><div class="own">Ramdhany Sunarto, NIM 1152800005</div></div>
+<div class="ctl">
 <button id="bPlay">Play</button><button id="bPause">Pause</button><button id="bReset">Reset</button>
+<select id="speed" aria-label="Kecepatan"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="3">3x</option></select>
+<button id="zi" aria-label="Perbesar">+</button><button id="zo" aria-label="Perkecil">&minus;</button><button id="zf">Pas layar</button>
+<label class="f"><input type="checkbox" id="fol">Ikuti node</label>
 <span id="st">Siap dijalankan</span>
 </div>
-<div class="wrap"><svg id="svg" width="1760" height="640" viewBox="0 0 1760 640" role="img" aria-label="Diagram BPMN swimlane daftar ulang mahasiswa"></svg></div>
-<div class="grid">
-<div class="card" id="prompt"><h2>Keputusan</h2><div id="pc" style="color:var(--mute)">Belum ada keputusan yang perlu dipilih.</div></div>
-<div class="card"><h2>Status simulasi</h2><div id="info">Batas SKS: belum ditentukan</div><div id="res" style="margin-top:8px"></div></div>
-<div class="card"><h2>Riwayat langkah</h2><ol id="log"></ol></div>
-</div>
+</header>
+<main>
+<section id="dg"><div id="cy"></div></section>
+<section class="card"><h2>Keputusan</h2><div id="pc" style="color:var(--mute)">Belum ada keputusan.</div><div id="info" style="margin-top:6px">Batas SKS: belum ditentukan</div></section>
+<section class="card"><h2>Hasil dan riwayat</h2><div id="res">Hasil akan tampil setelah simulasi selesai.</div><ol id="log"></ol></section>
+</main>
 <script>
-const NS="http://www.w3.org/2000/svg",NAME="Ramdhany Sunarto (1152800005)";
-const LANES=["Mahasiswa","Sistem (SIAKAD)","Dosen PA","Bagian Keuangan"];
-const X=c=>130+c*135,Y=(l,d=0)=>95+150*l+d;
-// id:[type,lane,col,dy,label]
-const N={
-start:["start",0,0,0,"Mulai|Daftar Ulang"],
-menu:["dec",0,1,0,"Pilih menu?"],
-off:["end",1,1,45,"Status:|TIDAK AKTIF"],
-cuti:["task",0,2,0,"Ajukan Cuti|Akademik"],
-dcuti:["dec",2,3,0,"Dosen PA|setuju cuti?"],
-cutiend:["end",1,3,50,"Status: CUTI"],
-ipk:["dec",1,2,0,"IPK > 3.5?"],
-b24:["task",1,3,-50,"Batas 24 SKS"],
-b18:["task",1,4,0,"Batas 18 SKS"],
-pilih:["task",0,5,0,"Pilih Mata|Kuliah"],
-bent:["dec",1,6,0,"Jadwal|bentrok?"],
-rev:["dec",2,7,0,"Dosen PA|setuju KRS?"],
-revisi:["task",0,7,0,"Revisi KRS"],
-kunci:["task",1,8,0,"KRS Terkunci"],
-bayar:["dec",0,9,0,"Sudah bayar|UKT/BPP?"],
-verif:["task",3,10,0,"Verifikasi|Pembayaran"],
-hitam:["end",1,11,50,"Terdaftar:|NAMA HITAM"],
-merah:["end",1,11,-50,"Terdaftar:|NAMA MERAH"]};
-// from,to,label,mode,offset
-const E=[
-["start","menu"],
-["menu","cuti","Cuti Akademik"],
-["menu","ipk","Ajukan KRS","b"],
-["menu","off","Tidak mengajukan (lewat batas)","v"],
-["cuti","dcuti"],
-["dcuti","cutiend","Ya (setuju)","v"],
-["dcuti","ipk","Tidak (wajib isi KRS)","l"],
-["ipk","b24","Ya (IPK > 3.5)"],
-["ipk","b18","Tidak (IPK \u2264 3.5)"],
-["b24","pilih"],["b18","pilih"],
-["pilih","bent"],
-["bent","pilih","Ya (bentrok, ulangi)","u",28],
-["bent","rev","Tidak (aman)"],
-["rev","kunci","Ya (setuju)"],
-["rev","revisi","Tidak (tolak)","v"],
-["revisi","pilih","","u",46],
-["kunci","bayar"],
-["bayar","verif","Sudah bayar"],
-["bayar","merah","Belum bayar"],
-["verif","hitam"]
-].map(a=>({f:a[0],t:a[1],l:a[2]||"",m:a[3]||"z",o:a[4]||0}));
-const pos=id=>({x:X(N[id][2]),y:Y(N[id][1],N[id][3])});
-const hw=id=>N[id][0]=="dec"?56:52, hh=id=>N[id][0]=="dec"?35:27;
-const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
-const svg=document.getElementById("svg");
-// lanes
-LANES.forEach((n,i)=>{const y=20+150*i;mk("rect",{x:0,y,width:1760,height:150,class:"band l"+i});
-mk("rect",{x:0,y,width:24,height:150,class:"band l"+i,opacity:.0});
-const t=mk("text",{x:14,y:y+75,class:"lane",transform:`rotate(-90 14 ${y+75})`,"text-anchor":"middle"});t.textContent=n});
-const defs=mk("defs",{});
-const mr=mk("marker",{id:"ar",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto-start-reverse"},defs);
-mk("path",{d:"M0 0L10 5L0 10z",fill:"context-stroke"},mr);
-function route(e){const s=pos(e.f),t=pos(e.t),hs=hw(e.f),ht=hw(e.t),vs=hh(e.f),vt=hh(e.t);
-if(e.m=="z"){const x1=s.x+hs,x2=t.x-ht,mx=(x1+x2)/2+e.o;return[[x1,s.y],[mx,s.y],[mx,t.y],[x2,t.y]]}
-if(e.m=="v"){const d=t.y>s.y?1:-1;return[[s.x,s.y+d*vs],[t.x,t.y-d*vt]]}
-if(e.m=="b")return[[s.x,s.y+vs],[s.x,t.y],[t.x-ht,t.y]];
-if(e.m=="l")return[[s.x-hs,s.y],[t.x,s.y],[t.x,t.y+vt]];
-const y=t.y-vt-e.o;return[[s.x,s.y-vs],[s.x,y],[t.x,y],[t.x,t.y-vt]]}
-const EP=[];
-E.forEach((e,i)=>{const p=route(e);
-EP[i]=mk("path",{d:"M"+p.map(q=>q.join(",")).join("L"),class:"e","marker-end":"url(#ar)"});
-if(e.l){let b=0,bi=0;for(let k=0;k<p.length-1;k++){const L=Math.abs(p[k+1][0]-p[k][0])+Math.abs(p[k+1][1]-p[k][1]);if(L>b){b=L;bi=k}}
-const a=p[bi],c=p[bi+1],h=a[1]==c[1],mx=(a[0]+c[0])/2,my=(a[1]+c[1])/2;
-const t=mk("text",{x:h?mx:mx+5,y:h?my-5:my,class:"el","text-anchor":h?"middle":"start"});t.textContent=e.l}});
-const NG={};
-Object.keys(N).forEach(id=>{const [ty,,,,lb]=N[id],p=pos(id),g=mk("g",{}),l=N[id][1],w=hw(id),h=hh(id);
-let sh;
-if(ty=="dec")sh=mk("polygon",{points:`${p.x},${p.y-h} ${p.x+w},${p.y} ${p.x},${p.y+h} ${p.x-w},${p.y}`,class:"n l"+l},g);
-else if(ty=="task")sh=mk("rect",{x:p.x-w,y:p.y-h,width:2*w,height:2*h,rx:7,class:"n l"+l},g);
-else sh=mk("rect",{x:p.x-w,y:p.y-h,width:2*w,height:2*h,rx:h,class:"n l"+l,"stroke-width":ty=="end"?3:1.5},g);
-const ls=lb.split("|"),t=mk("text",{class:"t"},g);
-ls.forEach((s,i)=>{const ts=mk("tspan",{x:p.x,y:p.y+4+(i-(ls.length-1)/2)*13},t);ts.textContent=s});
-NG[id]={g,sh}});
+const NAME="Ramdhany Sunarto (1152800005)",SP=170,X0=130;
+const LY={M:90,s1:220,s2:320,K:450,D:590};
+const LANES=[["Mahasiswa",0,160],["Sistem (SIAKAD)",160,380],["Bagian Keuangan",380,520],["Dosen PA",520,660]];
+const AC=["#3b82c4","#8a63d2","#3a9d6b","#d19a1f"];
+// id,type,lane,col,row,label
+const ND=[
+["start","s",0,0,"M","Mulai\nDaftar Ulang"],["menu","d",0,1,"M","Pilih\nmenu?"],["cuti","t",0,2,"M","Ajukan Cuti\nAkademik"],
+["pilih","t",0,5,"M","Pilih Mata\nKuliah"],["revisi","t",0,6,"M","Revisi KRS"],["bayar","d",0,7,"M","Sudah\nbayar?"],
+["off","e",1,0,"s1","Status:\nTIDAK AKTIF"],["ipk","d",1,3,"s1","IPK\n> 3.5?"],["b24","t",1,4,"s1","Batas\n24 SKS"],
+["bent","d",1,5,"s1","Jadwal\nbentrok?"],["kunci","t",1,6,"s1","KRS\nTerkunci"],["merah","e",1,9,"s1","Terdaftar:\nNAMA MERAH"],
+["cutiend","e",1,1,"s2","Status:\nCUTI"],["b18","t",1,4,"s2","Batas\n18 SKS"],["hitam","e",1,9,"s2","Terdaftar:\nNAMA HITAM"],
+["verif","t",2,8,"K","Verifikasi\nPembayaran"],["dcuti","d",3,2,"D","PA setuju\ncuti?"],["rev","d",3,5,"D","PA setuju\nKRS?"]];
+// from,to,label,button text,dir,turn
+const ED=[
+["start","menu","","","s"],["menu","cuti","Cuti","Cuti Akademik","s"],["menu","ipk","KRS","Ajukan KRS","vertical"],
+["menu","off","Tidak ajukan","Tidak mengajukan (lewat batas waktu)","vertical"],["cuti","dcuti","","","vertical"],
+["dcuti","cutiend","Ya","Ya, Dosen PA setuju cuti","horizontal"],["dcuti","ipk","Tidak","Tidak, wajib isi KRS","horizontal"],
+["ipk","b24","Ya","Ya (IPK > 3.5, batas 24 SKS)","s"],["ipk","b18","Tidak","Tidak (IPK \u2264 3.5, batas 18 SKS)","vertical"],
+["b24","pilih","","","horizontal"],["b18","pilih","","","horizontal"],["pilih","bent","","","s"],
+["bent","pilih","Ya","Ya, jadwal bentrok (ulangi pilih mata kuliah)","rightward","14px"],
+["bent","rev","Tidak","Tidak bentrok (kirim ke Dosen PA)","s"],
+["rev","kunci","Ya","Ya, KRS disetujui","horizontal","26px"],["rev","revisi","Tidak","Tidak, KRS ditolak (revisi)","horizontal","44px"],
+["revisi","pilih","","","upward","30px"],["kunci","bayar","","","horizontal"],
+["bayar","verif","Bayar","Sudah bayar","horizontal"],["bayar","merah","Belum","Belum bayar (Nama Merah)","vertical"],
+["verif","hitam","","","horizontal"]];
+const els=[];
+LANES.forEach((l,i)=>{els.push({data:{id:"band"+i,h:l[2]-l[1],lane:i},position:{x:900,y:(l[1]+l[2])/2},classes:"band",selectable:false,grabbable:false});
+els.push({data:{id:"lab"+i,h:l[2]-l[1],lane:i,label:l[0]},position:{x:18,y:(l[1]+l[2])/2},classes:"lab",selectable:false,grabbable:false})});
+ND.forEach(n=>els.push({data:{id:n[0],lane:n[2],label:n[5]},position:{x:X0+n[3]*SP,y:LY[n[4]]},classes:"n "+n[1]}));
+ED.forEach((e,i)=>{const st={};
+if(e[4]=="s")st["curve-style"]="straight";else{st["taxi-direction"]=e[4];if(e[5])st["taxi-turn"]=e[5]}
+els.push({data:{id:"e"+i,source:e[0],target:e[1],label:e[2]},style:st})});
+const cs=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function sty(){const ink=cs("--ink"),line=cs("--line"),pn=cs("--panel"),act=cs("--act"),dn=cs("--done"),bd=cs("--bd");
+const s=[
+{selector:"node,edge",style:{"z-index-compare":"manual","font-family":"Segoe UI,system-ui,sans-serif"}},
+{selector:".band",style:{shape:"rectangle",width:1800,height:"data(h)","border-width":1,"border-color":bd,events:"no","z-index":1}},
+{selector:".lab",style:{shape:"rectangle",width:36,height:"data(h)","border-width":1,"border-color":bd,label:"data(label)","text-rotation":"-90deg","font-size":13,"font-weight":700,color:ink,"text-valign":"center","text-halign":"center",events:"no","z-index":2}},
+{selector:".n",style:{label:"data(label)","text-wrap":"wrap","text-valign":"center","text-halign":"center","font-size":12,color:ink,"background-color":pn,"border-width":2,"z-index":10,width:96,height:52,shape:"round-rectangle"}},
+{selector:".d",style:{shape:"diamond",width:116,height:74,"font-size":11}},
+{selector:".s",style:{shape:"ellipse",width:92,height:54}},
+{selector:".e",style:{"border-width":4,width:104,height:54,"font-size":11,"font-weight":700}},
+{selector:".n.vis",style:{"border-color":dn}},
+{selector:".n.act",style:{"background-color":act,color:"#1b1b1b","border-color":"#b36b00","underlay-color":act,"underlay-opacity":.45,"underlay-padding":9}},
+{selector:"edge",style:{width:2,"line-color":line,"target-arrow-color":line,"target-arrow-shape":"triangle","arrow-scale":1.2,"curve-style":"taxi","taxi-direction":"auto","taxi-turn":"50%","taxi-turn-min-distance":8,label:"data(label)","font-size":11,color:ink,"text-background-color":pn,"text-background-opacity":.95,"text-background-padding":2,"text-background-shape":"roundrectangle","z-index":5}},
+{selector:"edge.done",style:{"line-color":dn,"target-arrow-color":dn,width:3}},
+{selector:"edge.on",style:{"line-color":act,"target-arrow-color":act,width:4,"line-style":"dashed","line-dash-pattern":[8,5],"z-index":20}}];
+AC.forEach((c,i)=>{s.push({selector:".band[lane="+i+"]",style:{"background-color":cs("--l"+i)}});
+s.push({selector:".lab[lane="+i+"]",style:{"background-color":c,color:"#fff"}});
+s.push({selector:".n[lane="+i+"]",style:{"border-color":c}})});
+s.push({selector:".n.vis",style:{"border-color":dn}});
+s.push({selector:".n.act",style:{"border-color":"#b36b00"}});
+return s}
+const cy=cytoscape({container:document.getElementById("cy"),elements:els,style:sty(),layout:{name:"preset"},
+minZoom:.25,maxZoom:2.5,wheelSensitivity:.25,boxSelectionEnabled:false,autoungrabify:true});
+const fit=()=>{cy.resize();cy.fit(cy.elements(),10)};
+fit();addEventListener("resize",fit);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>cy.style(sty()));
+const zc=f=>cy.zoom({level:cy.zoom()*f,renderedPosition:{x:cy.width()/2,y:cy.height()/2}});
+zi.onclick=()=>zc(1.25);zo.onclick=()=>zc(.8);zf.onclick=fit;
+let off=0;setInterval(()=>{off-=1.5;cy.edges(".on").style("line-dash-offset",off)},40);
 // engine
-let cur=null,paused=true,timer=null,pend=null,wait=false,fin=false,vis=new Set(),sks=null;
-const $=id=>document.getElementById(id),st=t=>$("st").textContent=t;
+let cur=null,paused=true,timer=null,pend=null,wait=false,fin=false;
+const $=id=>document.getElementById(id),st=t=>$("st").textContent=t,SPD=()=>+$("speed").value;
 const log=t=>{const li=document.createElement("li");li.textContent=t;$("log").appendChild(li);li.scrollIntoView({block:"nearest"})};
-function sch(f,ms){pend=f;timer=setTimeout(()=>{pend=null;f()},ms)}
-function enter(id){cur=id;vis.add(id);
-Object.values(NG).forEach(o=>{o.sh.classList.remove("act");o.g.classList.remove("a")});
-NG[id].sh.classList.add("act");NG[id].g.classList.add("a");NG[id].sh.classList.add("vis");
-const lb=N[id][4].replace("|"," "),ty=N[id][0];
-if(id=="b24"){sks=24;$("info").textContent="Batas SKS: 24 (IPK > 3.5)"}
-if(id=="b18"){sks=18;$("info").textContent="Batas SKS: 18 (IPK \u2264 3.5)"}
-log((ty=="dec"?"Keputusan: ":LANES[N[id][1]]+": ")+lb);
-const outs=E.map((e,i)=>({e,i})).filter(o=>o.e.f==id);
-if(ty=="end"){finish(id);return}
-if(ty=="dec"){wait=true;st("Menunggu pilihan Anda...");
-$("pc").innerHTML="";const q=document.createElement("div");q.className="q";q.textContent=lb+"?";$("pc").appendChild(q);
-outs.forEach(o=>{const b=document.createElement("button");b.textContent=o.e.l;b.onclick=()=>{wait=false;paused=false;$("pc").textContent="Memproses pilihan...";log("Pilihan: "+o.e.l);go(o.i)};$("pc").appendChild(b)});
+function sch(f,ms){pend=f;timer=setTimeout(()=>{pend=null;f()},ms/SPD())}
+function enter(id){cur=id;cy.nodes(".act").removeClass("act");const n=cy.getElementById(id);n.addClass("act vis");
+if($("fol").checked)cy.animate({center:{eles:n},duration:300});
+const nm=n.data("label").replace("\n"," "),ty=n.hasClass("d")?"d":n.hasClass("e")?"e":"t";
+if(id=="b24")$("info").textContent="Batas SKS: 24 (IPK > 3.5)";
+if(id=="b18")$("info").textContent="Batas SKS: 18 (IPK \u2264 3.5)";
+log((ty=="d"?"Keputusan: ":["Mahasiswa","Sistem","Keuangan","Dosen PA"][n.data("lane")]+": ")+nm);
+const outs=ED.map((e,i)=>({e,i})).filter(o=>o.e[0]==id);
+if(ty=="e"){finish(id);return}
+if(ty=="d"){wait=true;st("Menunggu pilihan Anda");const pc=$("pc");pc.innerHTML="";
+const q=document.createElement("div");q.className="q";q.textContent=nm+"?";pc.appendChild(q);
+outs.forEach(o=>{const b=document.createElement("button");b.textContent=o.e[3];b.onclick=()=>{wait=false;paused=false;pc.textContent="Memproses pilihan...";log("Pilihan: "+o.e[3]);go(o.i)};pc.appendChild(b)});
 setBtn();return}
 st("Berjalan");sch(()=>go(outs[0].i),900)}
-function go(i){EP[i].classList.add("on");sch(()=>{EP[i].classList.remove("on");EP[i].classList.add("done");enter(E[i].t)},800)}
+function go(i){const e=cy.getElementById("e"+i);e.addClass("on");
+sch(()=>{e.removeClass("on");e.style("line-dash-offset",0);e.addClass("done");enter(ED[i][1])},800)}
 function finish(id){fin=true;paused=true;wait=false;setBtn();$("pc").textContent="Simulasi selesai.";st("Selesai");
-const r={off:"Status mahasiswa: TIDAK AKTIF. Proses berhenti.",cutiend:"Status mahasiswa: CUTI. Proses berhenti.",
+const r={off:"Status mahasiswa: <b>TIDAK AKTIF</b>. Proses berhenti.",cutiend:"Status mahasiswa: <b>CUTI</b>. Proses berhenti.",
 hitam:`<b>Daftar peserta kelas:</b> <span class="hit">${NAME}</span> (Nama Hitam, tagihan lunas)`,
-merah:`<b>Daftar peserta kelas:</b> <span class="mer">${NAME}</span> (Nama Merah, tagihan belum dibayar; tetap terdaftar)`};
+merah:`<b>Daftar peserta kelas:</b> <span class="mer">${NAME}</span> (Nama Merah, belum bayar; tetap terdaftar)`};
 $("res").innerHTML=r[id]}
-function setBtn(){$("bPlay").textContent=cur&&!paused?"Berjalan":"Play"}
-$("bPlay").onclick=()=>{if(fin||wait)return;paused=false;if(cur==null)enter("start");else if(pend)sch(pend,100);setBtn();st("Berjalan")};
-$("bPause").onclick=()=>{if(fin||wait)return;paused=true;clearTimeout(timer);setBtn();st("Dijeda")};
-$("bReset").onclick=()=>{clearTimeout(timer);pend=null;cur=null;paused=true;wait=false;fin=false;sks=null;vis.clear();
-Object.values(NG).forEach(o=>{o.sh.classList.remove("act","vis");o.g.classList.remove("a")});
-EP.forEach(p=>p.classList.remove("on","done"));$("log").innerHTML="";$("res").innerHTML="";
-$("info").textContent="Batas SKS: belum ditentukan";$("pc").textContent="Belum ada keputusan yang perlu dipilih.";setBtn();st("Siap dijalankan")};
+const setBtn=()=>$("bPlay").textContent=cur&&!paused?"Berjalan":"Play";
+bPlay.onclick=()=>{if(fin||wait)return;paused=false;if(cur==null)enter("start");else if(pend)sch(pend,100*SPD());setBtn();st("Berjalan")};
+bPause.onclick=()=>{if(fin||wait)return;paused=true;clearTimeout(timer);setBtn();st("Dijeda")};
+bReset.onclick=()=>{clearTimeout(timer);pend=null;cur=null;paused=true;wait=false;fin=false;
+cy.nodes().removeClass("act vis");cy.edges().removeClass("on done");$("log").innerHTML="";
+$("res").textContent="Hasil akan tampil setelah simulasi selesai.";$("info").textContent="Batas SKS: belum ditentukan";
+$("pc").textContent="Belum ada keputusan.";setBtn();st("Siap dijalankan");fit()};
 </script>
 </body>
 </html>
