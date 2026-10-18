@@ -80,9 +80,7 @@ const els=[];
 LANES.forEach((l,i)=>{els.push({data:{id:"band"+i,h:l[2]-l[1],lane:i},position:{x:900,y:(l[1]+l[2])/2},classes:"band",selectable:false,grabbable:false});
 els.push({data:{id:"lab"+i,h:l[2]-l[1],lane:i,label:l[0]},position:{x:18,y:(l[1]+l[2])/2},classes:"lab",selectable:false,grabbable:false})});
 ND.forEach(n=>els.push({data:{id:n[0],lane:n[2],label:n[5]},position:{x:X0+n[3]*SP,y:LY[n[4]]},classes:"n "+n[1]}));
-ED.forEach((e,i)=>{const st={};
-if(e[4]=="s")st["curve-style"]="straight";else{st["taxi-direction"]=e[4];if(e[5])st["taxi-turn"]=e[5]}
-els.push({data:{id:"e"+i,source:e[0],target:e[1],label:e[2]},style:st})});
+ED.forEach((e,i)=>els.push({data:{id:"e"+i,source:e[0],target:e[1],label:e[2]}}));
 const cs=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function sty(){const ink=cs("--ink"),line=cs("--line"),pn=cs("--panel"),act=cs("--act"),dn=cs("--done"),bd=cs("--bd");
 const s=[
@@ -103,6 +101,8 @@ s.push({selector:".lab[lane="+i+"]",style:{"background-color":c,color:"#fff"}});
 s.push({selector:".n[lane="+i+"]",style:{"border-color":c}})});
 s.push({selector:".n.vis",style:{"border-color":dn}});
 s.push({selector:".n.act",style:{"border-color":"#b36b00"}});
+ED.forEach((e,i)=>{const o={};if(e[4]=="s")o["curve-style"]="straight";else{o["taxi-direction"]=e[4];if(e[5])o["taxi-turn"]=e[5]}
+s.push({selector:"#e"+i,style:o})});
 return s}
 const cy=cytoscape({container:document.getElementById("cy"),elements:els,style:sty(),layout:{name:"preset"},
 minZoom:.25,maxZoom:2.5,wheelSensitivity:.25,boxSelectionEnabled:false,autoungrabify:true});
