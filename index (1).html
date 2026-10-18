@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulasi BPMN Daftar Ulang Mahasiswa</title>
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#1d2a2e;--mute:#5d6b70;--line:#8a979b;--bd:#d5dbd9;
+--l0:#e3eefb;--l1:#ece6f7;--l2:#fbf0d9;--l3:#e1f3e6;--act:#ffb020;--done:#2f7d6d;--red:#d12c2c}
+@media(prefers-color-scheme:dark){:root{--bg:#141a1c;--panel:#1d2528;--ink:#e6ecea;--mute:#9aa8ab;--line:#7b898d;--bd:#33403f;
+--l0:#1d2c3d;--l1:#2a2539;--l2:#3a3220;--l3:#1f3427;--done:#5cc4af;--red:#ff6b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+header{padding:16px 20px 8px}
+h1{margin:0;font:700 20px/1.2 Georgia,"Times New Roman",serif}
+header p{margin:4px 0 0;color:var(--mute);font-size:13px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 20px}
+button{font:inherit;padding:7px 16px;border:1px solid var(--bd);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--done)}button:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+#bPlay{background:var(--done);color:#fff;border-color:var(--done)}
+#st{color:var(--mute);margin-left:8px}
+.wrap{margin:0 20px;border:1px solid var(--bd);border-radius:8px;background:var(--panel);overflow-x:auto}
+svg{display:block;font-family:inherit}
+.band{stroke:var(--bd)}.l0{fill:var(--l0)}.l1{fill:var(--l1)}.l2{fill:var(--l2)}.l3{fill:var(--l3)}
+.lane{font-size:12px;font-weight:700;fill:var(--ink)}
+.n{stroke:var(--line);stroke-width:1.5;transition:fill .3s}
+.n.vis{stroke:var(--done);stroke-width:2.5}
+.n.act{fill:var(--act);stroke:#b36b00;stroke-width:3;filter:drop-shadow(0 0 7px var(--act))}
+.t{font-size:11px;fill:var(--ink);text-anchor:middle;pointer-events:none}
+.act+.t,.act~.t{}
+g.a .t{fill:#1d1d1d;font-weight:700}
+.e{fill:none;stroke:var(--line);stroke-width:1.6}
+.e.done{stroke:var(--done);stroke-width:2.4}
+.e.on{stroke:var(--act);stroke-width:3.4;stroke-dasharray:8 6;animation:d .5s linear infinite}
+@keyframes d{to{stroke-dashoffset:-14}}
+.el{font-size:10.5px;fill:var(--mute);paint-order:stroke;stroke:var(--panel);stroke-width:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;padding:12px 20px 24px}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:12px 14px}
+.card h2{margin:0 0 8px;font-size:14px}
+#prompt .q{font-weight:600;margin-bottom:8px}#prompt button{margin:0 6px 6px 0}
+#log{margin:0;padding-left:18px;max-height:170px;overflow:auto;font-size:13px;color:var(--mute)}
+#log li:last-child{color:var(--ink);font-weight:600}
+.hit{color:var(--ink);font-weight:700}.mer{color:var(--red);font-weight:700}
+@media(prefers-reduced-motion:reduce){.e.on{animation:none}}
+</style>
+</head>
+<body>
+<header>
+<h1>Simulasi Alur Daftar Ulang Mahasiswa (BPMN Swimlane)</h1>
+<p>Ramdhany Sunarto, NIM 1152800005. Tekan Play, lalu pilih jawaban pada setiap titik keputusan.</p>
+</header>
+<div class="bar">
+<button id="bPlay">Play</button><button id="bPause">Pause</button><button id="bReset">Reset</button>
+<span id="st">Siap dijalankan</span>
+</div>
+<div class="wrap"><svg id="svg" width="1760" height="640" viewBox="0 0 1760 640" role="img" aria-label="Diagram BPMN swimlane daftar ulang mahasiswa"></svg></div>
+<div class="grid">
+<div class="card" id="prompt"><h2>Keputusan</h2><div id="pc" style="color:var(--mute)">Belum ada keputusan yang perlu dipilih.</div></div>
+<div class="card"><h2>Status simulasi</h2><div id="info">Batas SKS: belum ditentukan</div><div id="res" style="margin-top:8px"></div></div>
+<div class="card"><h2>Riwayat langkah</h2><ol id="log"></ol></div>
+</div>
+<script>
+const NS="http://www.w3.org/2000/svg",NAME="Ramdhany Sunarto (1152800005)";
+const LANES=["Mahasiswa","Sistem (SIAKAD)","Dosen PA","Bagian Keuangan"];
+const X=c=>130+c*135,Y=(l,d=0)=>95+150*l+d;
+// id:[type,lane,col,dy,label]
+const N={
+start:["start",0,0,0,"Mulai|Daftar Ulang"],
+menu:["dec",0,1,0,"Pilih menu?"],
+off:["end",1,1,45,"Status:|TIDAK AKTIF"],
+cuti:["task",0,2,0,"Ajukan Cuti|Akademik"],
+dcuti:["dec",2,3,0,"Dosen PA|setuju cuti?"],
+cutiend:["end",1,3,50,"Status: CUTI"],
+ipk:["dec",1,2,0,"IPK > 3.5?"],
+b24:["task",1,3,-50,"Batas 24 SKS"],
+b18:["task",1,4,0,"Batas 18 SKS"],
+pilih:["task",0,5,0,"Pilih Mata|Kuliah"],
+bent:["dec",1,6,0,"Jadwal|bentrok?"],
+rev:["dec",2,7,0,"Dosen PA|setuju KRS?"],
+revisi:["task",0,7,0,"Revisi KRS"],
+kunci:["task",1,8,0,"KRS Terkunci"],
+bayar:["dec",0,9,0,"Sudah bayar|UKT/BPP?"],
+verif:["task",3,10,0,"Verifikasi|Pembayaran"],
+hitam:["end",1,11,50,"Terdaftar:|NAMA HITAM"],
+merah:["end",1,11,-50,"Terdaftar:|NAMA MERAH"]};
+// from,to,label,mode,offset
+const E=[
+["start","menu"],
+["menu","cuti","Cuti Akademik"],
+["menu","ipk","Ajukan KRS","b"],
+["menu","off","Tidak mengajukan (lewat batas)","v"],
+["cuti","dcuti"],
+["dcuti","cutiend","Ya (setuju)","v"],
+["dcuti","ipk","Tidak (wajib isi KRS)","l"],
+["ipk","b24","Ya (IPK > 3.5)"],
+["ipk","b18","Tidak (IPK \u2264 3.5)"],
+["b24","pilih"],["b18","pilih"],
+["pilih","bent"],
+["bent","pilih","Ya (bentrok, ulangi)","u",28],
+["bent","rev","Tidak (aman)"],
+["rev","kunci","Ya (setuju)"],
+["rev","revisi","Tidak (tolak)","v"],
+["revisi","pilih","","u",46],
+["kunci","bayar"],
+["bayar","verif","Sudah bayar"],
+["bayar","merah","Belum bayar"],
+["verif","hitam"]
+].map(a=>({f:a[0],t:a[1],l:a[2]||"",m:a[3]||"z",o:a[4]||0}));
+const pos=id=>({x:X(N[id][2]),y:Y(N[id][1],N[id][3])});
+const hw=id=>N[id][0]=="dec"?56:52, hh=id=>N[id][0]=="dec"?35:27;
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+const svg=document.getElementById("svg");
+// lanes
+LANES.forEach((n,i)=>{const y=20+150*i;mk("rect",{x:0,y,width:1760,height:150,class:"band l"+i});
+mk("rect",{x:0,y,width:24,height:150,class:"band l"+i,opacity:.0});
+const t=mk("text",{x:14,y:y+75,class:"lane",transform:`rotate(-90 14 ${y+75})`,"text-anchor":"middle"});t.textContent=n});
+const defs=mk("defs",{});
+const mr=mk("marker",{id:"ar",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto-start-reverse"},defs);
+mk("path",{d:"M0 0L10 5L0 10z",fill:"context-stroke"},mr);
+function route(e){const s=pos(e.f),t=pos(e.t),hs=hw(e.f),ht=hw(e.t),vs=hh(e.f),vt=hh(e.t);
+if(e.m=="z"){const x1=s.x+hs,x2=t.x-ht,mx=(x1+x2)/2+e.o;return[[x1,s.y],[mx,s.y],[mx,t.y],[x2,t.y]]}
+if(e.m=="v"){const d=t.y>s.y?1:-1;return[[s.x,s.y+d*vs],[t.x,t.y-d*vt]]}
+if(e.m=="b")return[[s.x,s.y+vs],[s.x,t.y],[t.x-ht,t.y]];
+if(e.m=="l")return[[s.x-hs,s.y],[t.x,s.y],[t.x,t.y+vt]];
+const y=t.y-vt-e.o;return[[s.x,s.y-vs],[s.x,y],[t.x,y],[t.x,t.y-vt]]}
+const EP=[];
+E.forEach((e,i)=>{const p=route(e);
+EP[i]=mk("path",{d:"M"+p.map(q=>q.join(",")).join("L"),class:"e","marker-end":"url(#ar)"});
+if(e.l){let b=0,bi=0;for(let k=0;k<p.length-1;k++){const L=Math.abs(p[k+1][0]-p[k][0])+Math.abs(p[k+1][1]-p[k][1]);if(L>b){b=L;bi=k}}
+const a=p[bi],c=p[bi+1],h=a[1]==c[1],mx=(a[0]+c[0])/2,my=(a[1]+c[1])/2;
+const t=mk("text",{x:h?mx:mx+5,y:h?my-5:my,class:"el","text-anchor":h?"middle":"start"});t.textContent=e.l}});
+const NG={};
+Object.keys(N).forEach(id=>{const [ty,,,,lb]=N[id],p=pos(id),g=mk("g",{}),l=N[id][1],w=hw(id),h=hh(id);
+let sh;
+if(ty=="dec")sh=mk("polygon",{points:`${p.x},${p.y-h} ${p.x+w},${p.y} ${p.x},${p.y+h} ${p.x-w},${p.y}`,class:"n l"+l},g);
+else if(ty=="task")sh=mk("rect",{x:p.x-w,y:p.y-h,width:2*w,height:2*h,rx:7,class:"n l"+l},g);
+else sh=mk("rect",{x:p.x-w,y:p.y-h,width:2*w,height:2*h,rx:h,class:"n l"+l,"stroke-width":ty=="end"?3:1.5},g);
+const ls=lb.split("|"),t=mk("text",{class:"t"},g);
+ls.forEach((s,i)=>{const ts=mk("tspan",{x:p.x,y:p.y+4+(i-(ls.length-1)/2)*13},t);ts.textContent=s});
+NG[id]={g,sh}});
+// engine
+let cur=null,paused=true,timer=null,pend=null,wait=false,fin=false,vis=new Set(),sks=null;
+const $=id=>document.getElementById(id),st=t=>$("st").textContent=t;
+const log=t=>{const li=document.createElement("li");li.textContent=t;$("log").appendChild(li);li.scrollIntoView({block:"nearest"})};
+function sch(f,ms){pend=f;timer=setTimeout(()=>{pend=null;f()},ms)}
+function enter(id){cur=id;vis.add(id);
+Object.values(NG).forEach(o=>{o.sh.classList.remove("act");o.g.classList.remove("a")});
+NG[id].sh.classList.add("act");NG[id].g.classList.add("a");NG[id].sh.classList.add("vis");
+const lb=N[id][4].replace("|"," "),ty=N[id][0];
+if(id=="b24"){sks=24;$("info").textContent="Batas SKS: 24 (IPK > 3.5)"}
+if(id=="b18"){sks=18;$("info").textContent="Batas SKS: 18 (IPK \u2264 3.5)"}
+log((ty=="dec"?"Keputusan: ":LANES[N[id][1]]+": ")+lb);
+const outs=E.map((e,i)=>({e,i})).filter(o=>o.e.f==id);
+if(ty=="end"){finish(id);return}
+if(ty=="dec"){wait=true;st("Menunggu pilihan Anda...");
+$("pc").innerHTML="";const q=document.createElement("div");q.className="q";q.textContent=lb+"?";$("pc").appendChild(q);
+outs.forEach(o=>{const b=document.createElement("button");b.textContent=o.e.l;b.onclick=()=>{wait=false;paused=false;$("pc").textContent="Memproses pilihan...";log("Pilihan: "+o.e.l);go(o.i)};$("pc").appendChild(b)});
+setBtn();return}
+st("Berjalan");sch(()=>go(outs[0].i),900)}
+function go(i){EP[i].classList.add("on");sch(()=>{EP[i].classList.remove("on");EP[i].classList.add("done");enter(E[i].t)},800)}
+function finish(id){fin=true;paused=true;wait=false;setBtn();$("pc").textContent="Simulasi selesai.";st("Selesai");
+const r={off:"Status mahasiswa: TIDAK AKTIF. Proses berhenti.",cutiend:"Status mahasiswa: CUTI. Proses berhenti.",
+hitam:`<b>Daftar peserta kelas:</b> <span class="hit">${NAME}</span> (Nama Hitam, tagihan lunas)`,
+merah:`<b>Daftar peserta kelas:</b> <span class="mer">${NAME}</span> (Nama Merah, tagihan belum dibayar; tetap terdaftar)`};
+$("res").innerHTML=r[id]}
+function setBtn(){$("bPlay").textContent=cur&&!paused?"Berjalan":"Play"}
+$("bPlay").onclick=()=>{if(fin||wait)return;paused=false;if(cur==null)enter("start");else if(pend)sch(pend,100);setBtn();st("Berjalan")};
+$("bPause").onclick=()=>{if(fin||wait)return;paused=true;clearTimeout(timer);setBtn();st("Dijeda")};
+$("bReset").onclick=()=>{clearTimeout(timer);pend=null;cur=null;paused=true;wait=false;fin=false;sks=null;vis.clear();
+Object.values(NG).forEach(o=>{o.sh.classList.remove("act","vis");o.g.classList.remove("a")});
+EP.forEach(p=>p.classList.remove("on","done"));$("log").innerHTML="";$("res").innerHTML="";
+$("info").textContent="Batas SKS: belum ditentukan";$("pc").textContent="Belum ada keputusan yang perlu dipilih.";setBtn();st("Siap dijalankan")};
+</script>
+</body>
+</html>
